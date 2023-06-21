@@ -467,6 +467,7 @@ dependencies = [
  "rgb",
  "rustc-hash",
  "rustc_version",
+ "simd-adler32",
  "zopfli",
 ]
 
