@@ -108,23 +108,26 @@ impl Deflater for BufferedZopfliDeflater {
             iteration_count: self.iterations,
             ..Default::default() // for forward compatibility
         };
+        let mut out = Vec::with_capacity(self.output_buffer_size);
         let mut buffer = BufWriter::with_capacity(
             self.buffer_size,
             DeflateEncoder::new(
                 options,
                 Default::default(),
-                Cursor::new(Vec::with_capacity(self.output_buffer_size)),
+                &mut out,
             ),
         );
-        let result = (|| -> io::Result<Vec<u8>> {
+        let result = (|| -> io::Result<()> {
             buffer.write_all(data)?;
-            Ok(buffer.into_inner()?.finish()?.into_inner())
+            buffer.into_inner()?.finish()?;
+            Ok(())
         })();
-        let result = result.map_err(|e| PngError::new(&e.to_string()))?;
-        if max_size.get().is_some_and(|max| max < result.len()) {
-            Err(PngError::DeflatedDataTooLong(result.len()))
+        result.map_err(|e| PngError::new(&e.to_string()))?;
+        println!("Compressed {} -> {} bytes", data.len(), out.len());
+        if max_size.get().is_some_and(|max| max < out.len()) {
+            Err(PngError::DeflatedDataTooLong(out.len()))
         } else {
-            Ok(result)
+            Ok(out)
         }
     }
 }

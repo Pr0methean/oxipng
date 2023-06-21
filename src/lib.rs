@@ -406,7 +406,7 @@ impl RawImage {
             .filter(|c| opts.strip.keep(&c.name))
             .cloned()
             .collect();
-        postprocess_chunks(&mut png, opts, deadline, &self.png.ihdr);
+        postprocess_chunks(&mut png, opts, deadline, &self.png.ihdr, deflater);
 
         Ok(png.output())
     }
@@ -607,7 +607,7 @@ fn optimize_png(
         png.idat_data = new_png.idat_data;
     }
 
-    postprocess_chunks(png, &opts, deadline, &raw.ihdr);
+    postprocess_chunks(png, &opts, deadline, &raw.ihdr, &opts.deflate);
 
     let output = png.output();
 
@@ -713,17 +713,9 @@ fn optimize_raw<T: Deflater>(
             // We should have a result here - fail if not (e.g. deadline passed)
             let result = eval_result?;
 
-            match opts.deflate {
-                Deflaters::Libdeflater { compression } if compression <= eval_compression => {
-                    // No further compression required
-                    Some((result.filter, result.idat_data))
-                }
-                _ => {
-                    debug!("Trying: {}", result.filter);
-                    let best_size = AtomicMin::new(max_size);
-                    perform_trial(&result.filtered, opts, result.filter, &best_size, deflater)
-                }
-            }
+            debug!("Trying: {}", result.filter);
+            let best_size = AtomicMin::new(max_size);
+            perform_trial(&result.filtered, opts, result.filter, &best_size, deflater)
         } else {
             // Perform full compression trials of selected filters and determine the best
 
@@ -893,12 +885,13 @@ fn report_format(prefix: &str, png: &PngImage) {
 }
 
 /// Perform cleanup of certain chunks from the `PngData` object, after optimization has been completed
-fn postprocess_chunks(
+fn postprocess_chunks<T>(
     png: &mut PngData,
     opts: &Options,
     deadline: Arc<Deadline>,
     orig_ihdr: &IhdrData,
-) {
+    deflater: T
+) where T: Deflater {
     if let Some(iccp_idx) = png.aux_chunks.iter().position(|c| &c.name == b"iCCP") {
         // See if we can replace an iCCP chunk with an sRGB chunk
         let may_replace_iccp = opts.strip != StripChunks::None && opts.strip.keep(b"sRGB");
@@ -921,7 +914,7 @@ fn postprocess_chunks(
                 };
             } else if opts.idat_recoding {
                 // Try recompressing the profile
-                if let Ok(iccp) = construct_iccp(&icc, &opts.deflate) {
+                if let Ok(iccp) = construct_iccp(&icc, deflater) {
                     let cur_len = png.aux_chunks[iccp_idx].data.len();
                     let new_len = iccp.data.len();
                     if new_len < cur_len {
