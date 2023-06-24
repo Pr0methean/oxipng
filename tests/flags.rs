@@ -10,6 +10,7 @@ use std::num::NonZeroU8;
 use std::ops::Deref;
 use std::path::Path;
 use std::path::PathBuf;
+use oxipng::Deflaters::Zopfli;
 
 const GRAYSCALE: u8 = 0;
 const RGB: u8 = 2;
@@ -678,7 +679,7 @@ fn zopfli_mode() {
     let input = PathBuf::from("tests/files/zopfli_mode.png");
     let (output, mut opts) = get_opts(&input);
     opts.deflate = Deflaters::Zopfli {
-        iterations: NonZeroU8::new(15).unwrap(),
+        options: zopfli::Options::default(),
     };
 
     test_it_converts(
