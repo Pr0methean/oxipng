@@ -27,7 +27,7 @@ name = "zopfli"
 required-features = ["zopfli"]
 
 [dependencies]
-zopfli = { git = "https://github.com/Pr0methean/zopfli.git", branch = "pr21+pr22", optional = true, default-features = false, features = ["std", "zlib"] }
+zopfli = {git = "https://github.com/Pr0methean/zopfli.git", branch = "no_special_early_iter_handling", default-features = false, features = ["std", "zlib"] }
 simd-adler32 = { version = "0.3.5", optional = true, default-features = false }
 rgb = "0.8.36"
 indexmap = "1.9.3"
