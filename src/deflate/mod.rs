@@ -4,7 +4,7 @@ use crate::{PngError, PngResult};
 pub use deflater::crc32;
 pub use deflater::deflate;
 pub use deflater::inflate;
-use std::io::{copy, BufWriter, copy, Cursor, Write};
+use std::io::{copy, BufWriter, Cursor, Write};
 use std::{fmt, fmt::Display, io};
 
 #[cfg(feature = "zopfli")]
@@ -15,8 +15,6 @@ mod zopfli_oxipng;
 use simd_adler32::Adler32;
 #[cfg(feature = "zopfli")]
 pub use zopfli_oxipng::deflate as zopfli_deflate;
-#[cfg(feature = "zopfli")]
-use simd_adler32::Adler32;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// DEFLATE algorithms supported by oxipng
@@ -60,7 +58,7 @@ pub struct BufferedZopfliDeflater {
     iterations: NonZeroU8,
     input_buffer_size: usize,
     output_buffer_size: usize,
-    max_block_splits: u16,
+    options: Options,
 }
 
 #[cfg(feature = "zopfli")]
@@ -75,7 +73,6 @@ impl BufferedZopfliDeflater {
             iterations,
             input_buffer_size,
             output_buffer_size,
-            max_block_splits,
         }
     }
 
@@ -99,7 +96,6 @@ impl Default for BufferedZopfliDeflater {
 
 #[cfg(feature = "zopfli")]
 impl Deflater for BufferedZopfliDeflater {
-
     /// Fork of the zlib_compress function in Zopfli.
     fn deflate(&self, data: &[u8], max_size: &AtomicMin) -> PngResult<Vec<u8>> {
         #[allow(clippy::needless_update)]
@@ -117,15 +113,12 @@ impl Deflater for BufferedZopfliDeflater {
 
         let out = (|| -> io::Result<Vec<u8>> {
             let mut rolling_adler = Adler32::new();
-            let mut in_data = zopfli_oxipng::HashingAndCountingRead::new(data, &mut rolling_adler, None);
+            let mut in_data =
+                zopfli_oxipng::HashingAndCountingRead::new(data, &mut rolling_adler, None);
             out.write_all(&cmfflg.to_be_bytes())?;
             let mut buffer = BufWriter::with_capacity(
                 self.buffer_size,
-                DeflateEncoder::new(
-                    options,
-                    Default::default(),
-                    &mut out,
-                ),
+                DeflateEncoder::new(options, Default::default(), &mut out),
             );
             copy(&mut in_data, &mut buffer)?;
             buffer.into_inner()?.finish()?;

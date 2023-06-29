@@ -891,7 +891,9 @@ fn postprocess_chunks<T>(
     deadline: Arc<Deadline>,
     orig_ihdr: &IhdrData,
     deflater: T
-) where T: Deflater {
+)where
+    T: Deflater,
+{
     if let Some(iccp_idx) = png.aux_chunks.iter().position(|c| &c.name == b"iCCP") {
         // See if we can replace an iCCP chunk with an sRGB chunk
         let may_replace_iccp = opts.strip != StripChunks::None && opts.strip.keep(b"sRGB");
