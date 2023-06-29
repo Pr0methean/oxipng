@@ -551,7 +551,9 @@ fn parse_opts_into_struct(
     if matches.is_present("zopfli") {
         #[cfg(feature = "zopfli")]
         let zopfli_opts = zopfli::Options::default();
-        opts.deflate = Deflaters::Zopfli { options: zopfli_opts };
+        opts.deflate = Deflaters::Zopfli {
+            options: zopfli_opts,
+        };
     } else if let Deflaters::Libdeflater { compression } = &mut opts.deflate {
         if let Some(x) = matches.get_one::<i64>("compression") {
             *compression = *x as u8;
