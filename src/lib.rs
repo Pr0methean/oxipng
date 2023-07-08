@@ -588,7 +588,13 @@ fn optimize_png(
     } else {
         Some(png.estimated_output_size())
     };
-    if let Some(new_png) = optimize_raw(raw.clone(), &opts, deadline.clone(), max_size, &opts.deflate) {
+    if let Some(new_png) = optimize_raw(
+        raw.clone(),
+        &opts,
+        deadline.clone(),
+        max_size,
+        &opts.deflate,
+    ) {
         png.raw = new_png.raw;
         png.idat_data = new_png.idat_data;
     }
@@ -861,8 +867,13 @@ fn report_format(prefix: &str, png: &PngImage) {
 }
 
 /// Perform cleanup of certain chunks from the `PngData` object, after optimization has been completed
-fn postprocess_chunks<T>(png: &mut PngData, opts: &Options, orig_ihdr: &IhdrData, deadline: Arc<Deadline>, deflater: &T)
-where
+fn postprocess_chunks<T>(
+    png: &mut PngData,
+    opts: &Options,
+    deadline: Arc<Deadline>,
+    orig_ihdr: &IhdrData,
+    deflater: &T,
+) where
     T: Deflater,
 {
     if let Some(iccp_idx) = png.aux_chunks.iter().position(|c| &c.name == b"iCCP") {

@@ -8,9 +8,14 @@ use std::io::{copy, BufWriter, Cursor, Write};
 use std::{fmt, fmt::Display, io};
 
 #[cfg(feature = "zopfli")]
+use std::io::{self, copy, BufWriter, Cursor, Write};
+
+#[cfg(feature = "zopfli")]
 use zopfli::{DeflateEncoder, Options};
 #[cfg(feature = "zopfli")]
 mod zopfli_oxipng;
+#[cfg(feature = "zopfli")]
+use simd_adler32::Adler32;
 #[cfg(feature = "zopfli")]
 use simd_adler32::Adler32;
 #[cfg(feature = "zopfli")]
@@ -113,7 +118,7 @@ impl Deflater for BufferedZopfliDeflater {
             Ok(out.into_inner())
         })();
         let out = out.map_err(|e| PngError::new(&e.to_string()))?;
-        if max_size.get().is_some_and(|max| max < out.len()) {
+        if max_size.get().map(|max| max < out.len()).unwrap_or(false) {
             Err(PngError::DeflatedDataTooLong(out.len()))
         } else {
             Ok(out)

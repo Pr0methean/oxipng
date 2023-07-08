@@ -29,6 +29,7 @@ required-features = ["zopfli"]
 [dependencies]
 zopfli = {git = "https://github.com/Pr0methean/zopfli.git", default-features = false, features = ["zlib"] }
 simd-adler32 = { version = "0.3.5", optional = true, default-features = false }
+simd-adler32 = { version = "0.3.5", optional = true, default-features = false }
 rgb = "0.8.36"
 indexmap = "2.0.0"
 libdeflater = "0.14.0"
@@ -67,7 +68,7 @@ version = "0.24.6"
 rustc_version = "0.4.0"
 
 [features]
-zopfli = ["zopfli/zlib", "simd-adler32"]
+zopfli = ["zopfli/std", "zopfli/zlib", "simd-adler32"]
 binary = ["clap", "wild", "stderrlog"]
 default = ["binary", "filetime", "parallel", "zopfli"]
 parallel = ["rayon", "indexmap/rayon", "crossbeam-channel"]
