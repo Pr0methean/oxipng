@@ -12,6 +12,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use oxipng::Deflaters::Zopfli;
 
+const GRAYSCALE: u8 = 0;
 const RGB: u8 = 2;
 const INDEXED: u8 = 3;
 const RGBA: u8 = 6;
@@ -19,6 +20,7 @@ const RGBA: u8 = 6;
 fn get_opts(input: &Path) -> (OutFile, oxipng::Options) {
     let mut options = oxipng::Options {
         force: true,
+        fast_evaluation: false,
         ..Default::default()
     };
     let mut filter = IndexSet::new();
@@ -598,7 +600,7 @@ fn fix_errors() {
         }
     };
 
-    assert_eq!(png.raw.ihdr.color_type.png_header_code(), INDEXED);
+    assert_eq!(png.raw.ihdr.color_type.png_header_code(), GRAYSCALE);
     assert_eq!(png.raw.ihdr.bit_depth, BitDepth::Eight);
 
     // Cannot check if pixels are equal because image crate cannot read corrupt (input) PNGs
