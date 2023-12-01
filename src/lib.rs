@@ -890,7 +890,7 @@ fn postprocess_chunks<T>(
     opts: &Options,
     deadline: Arc<Deadline>,
     orig_ihdr: &IhdrData,
-    deflater: T
+    deflater: &T
 )where
     T: Deflater,
 {

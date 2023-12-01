@@ -15,6 +15,8 @@ mod zopfli_oxipng;
 use simd_adler32::Adler32;
 #[cfg(feature = "zopfli")]
 pub use zopfli_oxipng::deflate as zopfli_deflate;
+#[cfg(feature = "zopfli")]
+use zopfli::Options as ZopfliOptions;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// DEFLATE algorithms supported by oxipng
@@ -41,7 +43,7 @@ impl Deflater for Deflaters {
         let compressed = match self {
             Self::Libdeflater { compression } => deflate(data, *compression, max_size)?,
             #[cfg(feature = "zopfli")]
-            Self::Zopfli { options } => zopfli_deflate(data, options)?,
+            Self::Zopfli { options } => zopfli_deflate(data, options.clone())?,
         };
         if let Some(max) = max_size.get() {
             if compressed.len() > max {
@@ -55,34 +57,30 @@ impl Deflater for Deflaters {
 #[cfg(feature = "zopfli")]
 #[derive(Copy, Clone, Debug)]
 pub struct BufferedZopfliDeflater {
-    iterations: NonZeroU8,
     input_buffer_size: usize,
     output_buffer_size: usize,
-    options: Options,
+    options: ZopfliOptions,
 }
 
 #[cfg(feature = "zopfli")]
 impl BufferedZopfliDeflater {
     pub const fn new(
-        iterations: NonZeroU8,
         input_buffer_size: usize,
         output_buffer_size: usize,
-        max_block_splits: u16,
+        options: ZopfliOptions,
     ) -> Self {
         BufferedZopfliDeflater {
-            iterations,
             input_buffer_size,
             output_buffer_size,
+            options
         }
     }
 
     pub const fn const_default() -> Self {
         BufferedZopfliDeflater {
-            // SAFETY: trivially safe. Stopgap solution until const unwrap is stabilized.
-            iterations: unsafe { NonZeroU8::new_unchecked(15) },
             input_buffer_size: 1024 * 1024,
             output_buffer_size: 64 * 1024,
-            max_block_splits: 15,
+            options: ZopfliOptions::const_default()
         }
     }
 }
@@ -98,11 +96,6 @@ impl Default for BufferedZopfliDeflater {
 impl Deflater for BufferedZopfliDeflater {
     /// Fork of the zlib_compress function in Zopfli.
     fn deflate(&self, data: &[u8], max_size: &AtomicMin) -> PngResult<Vec<u8>> {
-        #[allow(clippy::needless_update)]
-        let options = Options {
-            iteration_count: self.iterations,
-            ..Default::default() // for forward compatibility
-        };
         let mut out = Cursor::new(Vec::with_capacity(self.output_buffer_size));
         let cmf = 120; /* CM 8, CINFO 7. See zlib spec.*/
         let flevel = 3;
@@ -117,8 +110,8 @@ impl Deflater for BufferedZopfliDeflater {
                 zopfli_oxipng::HashingAndCountingRead::new(data, &mut rolling_adler, None);
             out.write_all(&cmfflg.to_be_bytes())?;
             let mut buffer = BufWriter::with_capacity(
-                self.buffer_size,
-                DeflateEncoder::new(options, Default::default(), &mut out),
+                self.input_buffer_size,
+                DeflateEncoder::new(self.options.clone(), Default::default(), &mut out),
             );
             copy(&mut in_data, &mut buffer)?;
             buffer.into_inner()?.finish()?;

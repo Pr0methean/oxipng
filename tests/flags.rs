@@ -4,13 +4,10 @@ use oxipng::*;
 #[cfg(feature = "filetime")]
 use std::cell::RefCell;
 use std::fs::remove_file;
-#[cfg(feature = "zopfli")]
-use std::num::NonZeroU8;
 #[cfg(feature = "filetime")]
 use std::ops::Deref;
 use std::path::Path;
 use std::path::PathBuf;
-use oxipng::Deflaters::Zopfli;
 
 const GRAYSCALE: u8 = 0;
 const RGB: u8 = 2;

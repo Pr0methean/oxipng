@@ -28,8 +28,6 @@ use rayon::prelude::*;
 use std::ffi::OsString;
 use std::fs::DirBuilder;
 use std::io::Write;
-#[cfg(feature = "zopfli")]
-use std::num::NonZeroU8;
 use std::path::PathBuf;
 use std::process::exit;
 use std::time::Duration;
