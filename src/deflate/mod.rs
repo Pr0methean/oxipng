@@ -8,7 +8,7 @@ use std::io::{copy, BufWriter, Cursor, Write};
 use std::{fmt, fmt::Display, io};
 
 #[cfg(feature = "zopfli")]
-use zopfli::{DeflateEncoder, Options};
+use zopfli::{DeflateEncoder};
 #[cfg(feature = "zopfli")]
 mod zopfli_oxipng;
 #[cfg(feature = "zopfli")]
@@ -30,7 +30,7 @@ pub enum Deflaters {
     /// Use the better but slower Zopfli implementation
     Zopfli {
         /// Zopfli compression options
-        options: Options,
+        options: ZopfliOptions,
     },
 }
 
